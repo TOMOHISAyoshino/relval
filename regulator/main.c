@@ -86,7 +86,6 @@ $                                - "time" is the part that specifies the
 #
 ####################################################################*/
 //  Written by TOMOHISA Yoshino on 2024/02/07.
-#include <stdio.h>
 /*####################################################################
 # Initial Configuration
 ####################################################################*/
@@ -94,6 +93,7 @@ $                                - "time" is the part that specifies the
 /*=== Initial Setting ==============================================*/
 
 /*--- headers ------------------------------------------------------*/
+#include <stdio.h>
 #include <errno.h>
 #include <limits.h>
 #include <locale.h>
@@ -151,6 +151,11 @@ int giFmtType   = 'c'; /* 'c':calendar-time (default)
 int giVerbose   =  0 ; /* speaks more verbosely by the greater number   */
 int giPrio      =  1 ; /* -p option number (default 1)                  */
 
+typedef enum{
+    F_CALENDAR_TIME, //  0：カレンダー表記（デフォルト）
+    F_UNIX_TIME,     //  1：UNIX時間
+    F_SEC_DESIGNED   //  2:指定時刻からの経過ナノ秒
+}OP_FRM_TSTMP;
 /*=== Define the functions for printing usage and error ============*/
 
 /*--- exit with usage ----------------------------------------------*/
@@ -264,22 +269,36 @@ void error_exit(int iErrno, const char* szFormat, ...) {
 /*=== Initialization ===============================================*/
 int main(int argc, const char * argv[]) {
     /*--- Variables ----------------------------------------------------*/
-    int        i;               /* all-purpose int                    */
-    int64_t    i8;              /* all-purpose int64_t                */
-    char*      psz;             /* all-purpose char*                  */
-    tmsp       tsT0;            /* Time this command booted ~ exiting */
-    tmsp       tsRep;           /* Time to report at exiting          */
-    char*      pszArg;          /* String to parsr an argument        */
-    struct tm* ptm;             /* a pointer of "tm" structure        */
-    char       szTs[LINE_BUF];  /* timestamp to be reported           */
-    char       szTim[LINE_BUF]; /* timestamp (year - sec)             */
-    char       szDec[LINE_BUF]; /* timestamp (under sec)              */
-    char       szTmz[LINE_BUF]; /* timestamp (timezone)               */
+    int          i;               /* all-purpose int                    */
+    int64_t      i8;              /* all-purpose int64_t                */
+    char*        psz;             /* all-purpose char*                  */
+    OP_FRM_TSTMP nsCalendar = F_CALENDAR_TIME; /* Integer means format of timestamp */
+    char*        fdOut;         /* File or Descriptor to Output   */
+//    tmsp       tsT0;            /* Time this command booted ~ exiting */
+//    tmsp       tsRep;           /* Time to report at exiting          */
+//    char*      pszArg;          /* String to parsr an argument        */
+//    struct tm* ptm;             /* a pointer of "tm" structure        */
+//    char       szTs[LINE_BUF];  /* timestamp to be reported           */
+//    char       szTim[LINE_BUF]; /* timestamp (year - sec)             */
+//    char       szDec[LINE_BUF]; /* timestamp (under sec)              */
+//    char       szTmz[LINE_BUF]; /* timestamp (timezone)               */
 
     /*--- Initialize ---------------------------------------------------*/
     if (clock_gettime(CLOCK_REALTIME,&tsT0) != 0) {
       error_exit(errno,"clock_gettime() at initialize: %s\n",strerror(errno));
     }
+    
+    /*--- Parse options which start by "-" -----------------------------*/
+    while ((i=getopt(argc, argv, "cezd")) != -1) {
+      switch (i) {
+        case 'c': nsCalendar = F_CALENDAR_TIME; break;
+        case 'e': nsCalendar = F_UNIX_TIME;     break;
+        case 'z': nsCalendar = F_SEC_DESIGNED;  break;
+        case 'd': fdOut      = ;                 break;
+        default : print_usage_and_exit();
+      }
+    }
+    
     gpszCmdname = argv[0];
     for (i=0; *(gpszCmdname+i)!='\0'; i++) {
       if (*(gpszCmdname+i)=='/') {gpszCmdname=gpszCmdname+i+1;}
