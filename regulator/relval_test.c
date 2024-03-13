@@ -20,8 +20,12 @@ int main(int argc, const char* argv[]){
     
     /*--- read any argment ---------------*/
     for(i=1; i<argc; i++){
-        printf("argv[%d] : %s\n", i, argv[i]);
+        printf("argv[%d] : %s\n", i, argv[i]); // テスト用出力。
     }
+    
+    /*--- read time to let lines go ------*/
+    int sec2Rel = atoi(argv[1]);
+    char* path  = argv[2];
     
     return 0;
         　
